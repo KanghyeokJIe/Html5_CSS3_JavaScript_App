@@ -1,16 +1,20 @@
+// 전역 상수
 const API_BASE_URL = "http://localhost:8080/api/books";
 let editingBookId = null;
 
+// DOM 요소
 const bookForm = document.getElementById("bookForm");
 const bookTableBody = document.getElementById("bookTableBody");
 const cancelButton = bookForm.querySelector(".cancel-btn");
 const submitButton = bookForm.querySelector('button[type="submit"]');
 const formError = document.getElementById("formError");
 
+// 페이지 로드 시 도서 목록 불러오기
 document.addEventListener("DOMContentLoaded", () => {
     loadBooks();
 });
 
+// 도서 목록 조회
 function loadBooks() {
     fetch(API_BASE_URL)
         .then(response => {
@@ -29,6 +33,7 @@ function loadBooks() {
         });
 }
 
+// 도서 목록 렌더링
 function renderBookTable(books) {
     bookTableBody.innerHTML = "";
     books.forEach(book => {
@@ -48,6 +53,7 @@ function renderBookTable(books) {
     });
 }
 
+// 도서 등록 or 수정 제출
 bookForm.addEventListener("submit", function (event) {
     event.preventDefault();
 
@@ -69,6 +75,7 @@ bookForm.addEventListener("submit", function (event) {
     }
 });
 
+// 도서 유효성 검사
 function validateBook(book) {
     if (!book.title) return alert("제목을 입력해주세요."), false;
     if (!book.author) return alert("저자를 입력해주세요."), false;
@@ -78,6 +85,7 @@ function validateBook(book) {
     return true;
 }
 
+// 도서 등록 (POST)
 function createBook(bookData) {
     fetch(API_BASE_URL, {
         method: "POST",
@@ -85,7 +93,10 @@ function createBook(bookData) {
         body: JSON.stringify(bookData)
     })
     .then(async response => {
-        if (!response.ok) await handleErrorResponse(response);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "도서 등록에 실패했습니다.");
+        }
         return response.json();
     })
     .then(() => {
@@ -96,10 +107,14 @@ function createBook(bookData) {
     .catch(error => showError(error.message));
 }
 
+// 도서 수정용 데이터 불러오기 (GET by ID)
 function editBook(bookId) {
     fetch(`${API_BASE_URL}/${bookId}`)
         .then(async response => {
-            if (!response.ok) await handleErrorResponse(response);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "도서를 찾을 수 없습니다.");
+            }
             return response.json();
         })
         .then(book => {
@@ -116,6 +131,7 @@ function editBook(bookId) {
         .catch(error => showError(error.message));
 }
 
+// 도서 수정 요청 (PUT)
 function updateBook(bookId, bookData) {
     fetch(`${API_BASE_URL}/${bookId}`, {
         method: "PUT",
@@ -123,7 +139,10 @@ function updateBook(bookId, bookData) {
         body: JSON.stringify(bookData)
     })
     .then(async response => {
-        if (!response.ok) await handleErrorResponse(response);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "도서 수정에 실패했습니다.");
+        }
         return response.json();
     })
     .then(() => {
@@ -134,6 +153,7 @@ function updateBook(bookId, bookData) {
     .catch(error => showError(error.message));
 }
 
+// 도서 삭제 요청 (DELETE)
 function deleteBook(bookId) {
     if (!confirm(`ID ${bookId} 도서를 정말 삭제하시겠습니까?`)) return;
 
@@ -141,13 +161,17 @@ function deleteBook(bookId) {
         method: "DELETE"
     })
     .then(async response => {
-        if (!response.ok) await handleErrorResponse(response);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "도서 삭제에 실패했습니다.");
+        }
         showSuccess("도서가 성공적으로 삭제되었습니다!");
         loadBooks();
     })
     .catch(error => showError(error.message));
 }
 
+// 폼 초기화
 function resetForm() {
     bookForm.reset();
     editingBookId = null;
@@ -156,6 +180,7 @@ function resetForm() {
     clearMessages();
 }
 
+// 메시지 출력 함수
 function showSuccess(message) {
     formError.textContent = message;
     formError.style.display = "block";
@@ -170,34 +195,4 @@ function showError(message) {
 
 function clearMessages() {
     formError.style.display = "none";
-}
-
-// 상태 코드 기반 에러 처리 함수
-async function handleErrorResponse(response) {
-    let message = "알 수 없는 오류가 발생했습니다.";
-    try {
-        const errorData = await response.json();
-        message = errorData.message || message;
-    } catch (e) {
-        // JSON 파싱 실패 시 무시
-    }
-
-    switch (response.status) {
-        case 400:
-            message = message || "잘못된 요청입니다. 입력값을 확인해주세요.";
-            break;
-        case 404:
-            message = message || "해당 리소스를 찾을 수 없습니다.";
-            break;
-        case 409:
-            message = message || "이미 등록된 ISBN입니다.";
-            break;
-        case 500:
-            message = "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
-            break;
-        default:
-            message = message || `오류가 발생했습니다. (코드: ${response.status})`;
-    }
-
-    throw new Error(message);
 }

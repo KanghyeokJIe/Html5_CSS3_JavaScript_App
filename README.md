@@ -50,5 +50,6 @@
     * - PUT api/students/1 student 수정하는 updateStudent() 함수 구현
 * step10
     * - 성공 및 실패 메시지를 alert() 대신 formError <span> 에 보여주기
-    * - showSuccess() / show Error() / clearMessages() 함수추가
-    * - loadStudents() 목록 불러오기 실패한 경우에 처리리
+    * - showSuccess() / showError() / clearMessages() 함수추가
+    * - loadStudents() 목록 불러오기 실패한 경우에 처리
+
